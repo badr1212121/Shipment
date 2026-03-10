@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+frontend/dist/
+target/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Environment
+.env
+.env.local
+*.log
