@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Shipment WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h2>Shipment Updates</h2>
+<p id="connection-status">Connecting...</p>
+<ul id="messages"></ul>
+
+<script>
+    const messagesEl = document.getElementById("messages");
+    const statusEl = document.getElementById("connection-status");
+
+    const socket = new SockJS("/ws");
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+
+    stompClient.connect({}, function (frame) {
+        statusEl.textContent = "Connected: " + frame.command;
+        statusEl.style.color = "green";
+
+        // Subscribe to all shipment updates (create + status updates)
+        stompClient.subscribe("/topic/shipments", function (message) {
+            const msg = JSON.parse(message.body);
+            console.log("Received update:", msg);
+
+            const li = document.createElement("li");
+            const time = msg.updatedAt ? new Date(msg.updatedAt).toISOString().substring(0, 23) : "—";
+            const text = msg.message || "Update";
+            li.textContent = "[" + time + "] Shipment " + (msg.trackingNumber || msg.shipmentId) + " is " + msg.status + ": " + text;
+            messagesEl.appendChild(li);
+        });
+    }, function (error) {
+        statusEl.textContent = "Connection failed: " + (error.headers?.message || error);
+        statusEl.style.color = "red";
+        console.error(error);
+    });
+</script>
+</body>
+</html>
