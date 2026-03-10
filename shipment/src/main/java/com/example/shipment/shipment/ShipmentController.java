@@ -14,13 +14,15 @@ import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 @RestController
 @RequestMapping("/api/shipments")
 @AllArgsConstructor
 public class ShipmentController {
     private final ShipmentServices shipmentServices;
     private final ShipmentRepository shipmentRepository;
+    private final UserRepository userRepository;
 
     @PostMapping
     public ResponseEntity<?> createShipment(@Valid @RequestBody ShipmentDto.CreateShipmentRequest request) {
@@ -34,7 +36,27 @@ public class ShipmentController {
     public ResponseEntity<List<ShipmentDto.ShipmentResponse>> getAllShipments(
             @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) ShipmentStatus status) {
-        var response = shipmentServices.getAllShipments(customerId, status);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User currentUser = userRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
+
+        boolean isCustomer = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"));
+        boolean isDriver = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_DRIVER"));
+
+        List<ShipmentDto.ShipmentResponse> response;
+        if (isCustomer) {
+            response = shipmentServices.findByCustomerUserId(currentUser.getId());
+        } else if (isDriver) {
+            response = shipmentServices.findByDriverUserId(currentUser.getId());
+        } else {
+            response = shipmentServices.getAllShipments(customerId, status);
+        }
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

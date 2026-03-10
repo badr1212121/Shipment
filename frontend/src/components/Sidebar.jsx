@@ -1,28 +1,71 @@
+import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
+import SockJS from 'sockjs-client'
+import { Client } from '@stomp/stompjs'
 import {
   LayoutDashboard,
   Package,
   Truck,
   Users,
   UserCog,
+  MessageCircle,
   X,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
+import axiosInstance from '../api/axiosInstance'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'CUSTOMER', 'DRIVER'] },
   { to: '/shipments', label: 'Shipments', icon: Package, roles: ['ADMIN', 'CUSTOMER', 'DRIVER'] },
   { to: '/drivers', label: 'Drivers', icon: Truck, roles: ['ADMIN'] },
   { to: '/customers', label: 'Customers', icon: Users, roles: ['ADMIN'] },
+  { to: '/messages', label: 'Messages', icon: MessageCircle, roles: ['ADMIN', 'CUSTOMER', 'DRIVER'], showUnreadBadge: true },
   { to: '/users', label: 'Users', icon: UserCog, roles: ['ADMIN'] },
 ]
 
 export default function Sidebar({ open = false, onClose }) {
   const { user } = useAuth()
   const role = user?.role || ''
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const { data } = await axiosInstance.get('/messages/unread-count')
+      setUnreadCount(data?.count ?? 0)
+    } catch {
+      // Ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchUnreadCount()
+  }, [fetchUnreadCount])
+
+  useEffect(() => {
+    const handler = () => fetchUnreadCount()
+    window.addEventListener('message-notifier-update', handler)
+    return () => window.removeEventListener('message-notifier-update', handler)
+  }, [fetchUnreadCount])
+
+  useEffect(() => {
+    const socket = new SockJS('/ws')
+    const stomp = new Client({
+      webSocketFactory: () => socket,
+      onConnect: () => {
+        if (user?.userId) {
+          stomp.subscribe(`/topic/user/${user.userId}/messages`, () => {
+            fetchUnreadCount()
+          })
+        }
+      },
+    })
+    stomp.activate()
+    return () => stomp.deactivate()
+  }, [user?.userId, fetchUnreadCount])
 
   const visibleItems = navItems.filter((item) => item.roles.includes(role))
 
@@ -66,6 +109,7 @@ export default function Sidebar({ open = false, onClose }) {
           <nav className="flex-1 space-y-1 px-2">
             {visibleItems.map((item) => {
               const Icon = item.icon
+              const showBadge = item.showUnreadBadge && unreadCount > 0
               return (
                 <NavLink
                   key={item.to}
@@ -75,6 +119,11 @@ export default function Sidebar({ open = false, onClose }) {
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   {item.label}
+                  {showBadge && (
+                    <Badge variant="destructive" className="ml-auto text-xs">
+                      {unreadCount}
+                    </Badge>
+                  )}
                 </NavLink>
               )
             })}

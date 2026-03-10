@@ -7,6 +7,7 @@ const LABELS = {
   drivers: 'Drivers',
   customers: 'Customers',
   users: 'Users',
+  messages: 'Messages',
 }
 
 export default function Breadcrumbs() {

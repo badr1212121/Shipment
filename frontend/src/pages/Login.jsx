@@ -30,7 +30,7 @@ export default function Login() {
     setLoading(true)
     try {
       const { data } = await axiosInstance.post('/auth/login', { email, password })
-      login({ username: data.username, role: data.role }, data.token)
+      login({ userId: data.userId, username: data.username, role: data.role }, data.token)
       navigate(from, { replace: true })
     } catch (err) {
       const message = err.response?.data?.message || 'Invalid email or password'

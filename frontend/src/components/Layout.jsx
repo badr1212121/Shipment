@@ -3,12 +3,14 @@ import { Outlet } from 'react-router-dom'
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import Breadcrumbs from './Breadcrumbs'
+import MessageNotifier from './MessageNotifier'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <MessageNotifier />
       <Navbar onMenuClick={() => setSidebarOpen((o) => !o)} />
       <div className="flex">
         <Sidebar

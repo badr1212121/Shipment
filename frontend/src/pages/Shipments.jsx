@@ -58,6 +58,7 @@ import {
 import { useToast } from '@/components/ui/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useAuth } from '../auth/AuthContext'
 import { cn } from '@/lib/utils'
 
 const STATUS_OPTIONS = [
@@ -87,6 +88,8 @@ export default function Shipments() {
   const [deleteShipment, setDeleteShipment] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
 
   const fetchShipments = useCallback((params = {}) => {
     const query = new URLSearchParams()
@@ -106,18 +109,20 @@ export default function Shipments() {
     setLoading(true)
     setError('')
     try {
-      await Promise.all([
+      const promises = [
         fetchShipments({ customerId: customerIdFromUrl || undefined, status: statusFilter || undefined }),
-        fetchDrivers(),
-        fetchCustomers(),
-      ])
+      ]
+      if (isAdmin) {
+        promises.push(fetchDrivers(), fetchCustomers())
+      }
+      await Promise.all(promises)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load data')
       toast({ variant: 'destructive', title: 'Error', description: err.response?.data?.message || 'Failed to load' })
     } finally {
       setLoading(false)
     }
-  }, [fetchShipments, fetchDrivers, fetchCustomers, toast, customerIdFromUrl, statusFilter])
+  }, [fetchShipments, fetchDrivers, fetchCustomers, toast, customerIdFromUrl, statusFilter, isAdmin])
 
   useEffect(() => {
     loadData()
@@ -316,6 +321,7 @@ export default function Shipments() {
           <h1 className="text-2xl font-bold tracking-tight">Shipments</h1>
           <p className="text-muted-foreground text-sm">Manage all shipments</p>
         </div>
+        {isAdmin && (
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -444,6 +450,7 @@ export default function Shipments() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {error && (

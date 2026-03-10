@@ -41,6 +41,7 @@ export function AuthProvider({ children }) {
     isAdmin: user?.role === 'ADMIN',
     isCustomer: user?.role === 'CUSTOMER',
     isDriver: user?.role === 'DRIVER',
+    userId: user?.userId,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

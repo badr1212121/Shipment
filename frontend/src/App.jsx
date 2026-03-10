@@ -8,6 +8,7 @@ import ShipmentDetail from './pages/ShipmentDetail'
 import Drivers from './pages/Drivers'
 import Customers from './pages/Customers'
 import Users from './pages/Users'
+import Messages from './pages/Messages'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         <Route path="/shipments/:id" element={<ShipmentDetail />} />
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/messages" element={<Messages />} />
         <Route
           path="/users"
           element={

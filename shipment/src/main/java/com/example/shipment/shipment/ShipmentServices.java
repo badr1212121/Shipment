@@ -27,6 +27,18 @@ public class ShipmentServices {
         return getAllShipments(null, null);
     }
 
+    public List<ShipmentDto.ShipmentResponse> findByCustomerUserId(Long userId) {
+        return shipmentRepository.findByCustomerUserId(userId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<ShipmentDto.ShipmentResponse> findByDriverUserId(Long userId) {
+        return shipmentRepository.findByDriverUserId(userId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<ShipmentDto.ShipmentResponse> getAllShipments(Long customerId, ShipmentStatus status) {
         List<Shipment> shipments;
         if (customerId != null && status != null) {

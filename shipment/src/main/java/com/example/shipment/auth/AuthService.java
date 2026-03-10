@@ -75,6 +75,7 @@ public class AuthService implements UserDetailsService {
                 .token(token)
                 .username(user.getUsername())
                 .role(user.getRole())
+                .userId(user.getId())
                 .build();
     }
 
